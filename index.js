@@ -32,32 +32,19 @@ async function run() {
     });
     // single data
     app.get("/single/:id", async (req, res) => {
-      const { id } = req.params;
+  const { id } = req.params;
+ 
 
-      const ip =
-        req.headers["x-forwarded-for"]?.split(",")[0] ||
-        req.socket.remoteAddress ||
-        "103.78.252.1";
+  const result = await CoursesAll.findOne({ _id: new ObjectId(id) });
+  if (!result) return res.status(404).json({ error: "Course not found" });
 
-      let country = "Bangladesh";
-      try {
-        const response = await axios.get(`https://ipapi.co/${ip}/json/`);
-        country = response.data.country_name || "Bangladesh";
-      } catch (error) {
-        console.log("Geo lookup failed, using Bangladesh");
-      }
+  // const course = JSON.parse(JSON.stringify(result));
+  // const price = country === "Bangladesh" ? course.priceBDT : course.priceUSD;
+  // const data = { ...course, finalPrice: price, country };
 
-      const result = await CoursesAll.findOne({ _id: new ObjectId(id) });
-      if (!result) return res.status(404).json({ error: "Course not found" });
+  res.send(result);
+});
 
-      const course = JSON.parse(JSON.stringify(result));
-      const price = country === "Bangladesh" ? course.priceBDT : course.priceUSD;
-      console.log(price,"priceeeee")
-      const data = { ...course, finalPrice: price, country };
-      console.log(data);
-
-      res.json(data);
-    });
 
     // users
     app.post("/users", async (req, res) => {
