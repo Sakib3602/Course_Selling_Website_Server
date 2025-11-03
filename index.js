@@ -24,6 +24,7 @@ async function run() {
   try {
     const CoursesAll = client.db("COURSE").collection("courses");
     const UsersAll = client.db("COURSE").collection("users");
+    const OrdersAll = client.db("COURSE").collection("orders");
 
     // all course show
     app.get("/courses", async (req, res) => {
@@ -43,7 +44,8 @@ async function run() {
   // const data = { ...course, finalPrice: price, country };
 
   res.send(result);
-});
+   });
+
 
 
     // users
@@ -56,6 +58,46 @@ async function run() {
       const result = await UsersAll.insertOne(body);
       res.send(result);
     });
+    // update user from details order id add
+    app.patch("/updateUser/:email", async(req,res)=>{
+      const {email } = req.params;
+      console.log(email)
+      const updateData = req.body
+      console.log(updateData)
+
+      const UpdateU = await UsersAll.updateOne(
+        {email : email},
+        { $set: updateData }
+      )
+
+
+      res.send({ message: "✅ User updated successfully" });
+
+
+
+
+    })
+
+
+    // order start 
+    app.post("/orders", async(req,res)=>{
+      const data = req.body
+      const result = await OrdersAll.insertOne(data)
+
+      res.send(result, {message : "Order saved"})
+    })
+    // order end
+
+
+
+
+
+
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
