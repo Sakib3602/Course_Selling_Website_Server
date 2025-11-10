@@ -29,6 +29,7 @@ async function run() {
     const CoursesAll = client.db("COURSE").collection("courses");
     const UsersAll = client.db("COURSE").collection("users");
     const OrdersAll = client.db("COURSE").collection("orders");
+    const SupportAll = client.db("COURSE").collection("support");
     // ================= SEBL Credentials =================
   
     const SEBL_MERCHANT_ID = process.env.SEBL_MERCHANT_ID || "demoSEBL001";
@@ -129,6 +130,31 @@ async function run() {
     // SEBl WORK END
     //
     //
+
+
+    // order enrolled user course
+    app.get("/enrolled/:email", async (req, res) => {
+      const { email } = req.params;
+      console.log(email,"pppp");
+      const result = await OrdersAll.find({ personEmail: email }).toArray();
+      console.log(result);
+      res.send(result);
+    });
+
+    // support section user
+    app.post("/support", async (req, res) => {
+      const body = req.body;
+      console.log(body);
+      const result = await SupportAll.insertOne(body);
+      res.send(result);
+    });
+
+    app.get("/support/:email", async(req,res)=>{
+      const { email} = req.params
+      console.log(email)
+      const result = await SupportAll.find({userEmail: email}).toArray()
+      res.send(result)
+    })
 
     // all course show
     app.get("/courses", async (req, res) => {
