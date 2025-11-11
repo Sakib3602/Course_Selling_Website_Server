@@ -186,6 +186,15 @@ async function run() {
       const result = await UsersAll.insertOne(body);
       return res.status(201).json({ insertedId: result.insertedId });
     });
+
+    app.get("/users/:email", async (req, res) => {
+      const { email } = req.params;
+      const result = await UsersAll.findOne({ email: email });
+      if (!result) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.send(result);
+    })
     // update user from details order id add
     app.patch("/updateUser/:email", async (req, res) => {
       const { email } = req.params;
