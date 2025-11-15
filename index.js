@@ -187,6 +187,13 @@ async function run() {
       return res.status(201).json({ insertedId: result.insertedId });
     });
 
+    // only user
+    app.get("/Onlyusers", async (req, res) => {
+      const result = await UsersAll.find({role : "user"}).toArray();
+      res.send(result);
+
+    });
+
     app.get("/users/:email", async (req, res) => {
       const { email } = req.params;
       const result = await UsersAll.findOne({ email: email });
@@ -194,6 +201,20 @@ async function run() {
         return res.status(404).json({ message: "User not found" });
       }
       res.send(result);
+    })
+
+    // role change
+    app.patch("/roleChange/:id", async(req,res)=>{
+      const { id } = req.params;
+      console.log(id);
+      const updateRole = req.body;
+      console.log(updateRole.role);
+
+      const result = await UsersAll.updateOne(
+        {_id: new ObjectId(id)},
+        {$set : {role : updateRole.role}}
+      )
+      res.send({result, message: "✅ Role updated successfully" });
     })
     // update user from details order id add
     app.patch("/updateUser/:email", async (req, res) => {
