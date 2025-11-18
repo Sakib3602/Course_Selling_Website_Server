@@ -4,11 +4,18 @@ require("dotenv").config();
 const axios = require("axios");
 const app = express();
 const port = process.env.PORT || 3000;
-
-app.use(cors());
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 // Parse form-encoded payloads (bank gateway callbacks usually post this)
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.b5jufhp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -31,7 +38,7 @@ async function run() {
     const OrdersAll = client.db("COURSE").collection("orders");
     const SupportAll = client.db("COURSE").collection("support");
     // ================= SEBL Credentials =================
-  
+
     const SEBL_MERCHANT_ID = process.env.SEBL_MERCHANT_ID || "demoSEBL001";
     const SEBL_MERCHANT_PASS = process.env.SEBL_MERCHANT_PASS || "123456";
 
@@ -48,7 +55,7 @@ async function run() {
       }
 
       // ========== Data ==========
-     
+
       const data = {
         store_id: SEBL_MERCHANT_ID, // Bank merchant ID
         store_passwd: SEBL_MERCHANT_PASS, // Bank merchant password
@@ -89,12 +96,10 @@ async function run() {
         }
 
         // যদি কোন error হয়
-        return res
-          .status(400)
-          .json({
-            message: "Failed to create payment",
-            response: response.data,
-          });
+        return res.status(400).json({
+          message: "Failed to create payment",
+          response: response.data,
+        });
       } catch (error) {
         console.error(
           "Payment Initiate Error:",
@@ -130,12 +135,32 @@ async function run() {
     // SEBl WORK END
     //
     //
+    // JJJJJJJJJJWWWWWWWWWWWWWWWTTTTTTTTTTTTTTTTT
 
+    // generate jwt token
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(
+        {
+          data: user,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "1h" }
+      );
 
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: false, // local MUST be false
+          sameSite: "lax", // local MUST NOT be "none"
+        })
+        .send({ success: true });
+    });
     // order enrolled user course
     app.get("/enrolled/:email", async (req, res) => {
       const { email } = req.params;
-      console.log(email,"pppp");
+      console.log(email, "pppp");
       const result = await OrdersAll.find({ personEmail: email }).toArray();
       console.log(result);
       res.send(result);
@@ -149,12 +174,17 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/support/:email", async(req,res)=>{
-      const { email} = req.params
-      console.log(email)
-      const result = await SupportAll.find({userEmail: email}).toArray()
-      res.send(result)
-    })
+    app.get("/supportAll", async (req, res) => {
+      const result = await SupportAll.find({ status: "Pending" }).toArray();
+      res.send(result);
+    });
+
+    app.get("/support/:email", async (req, res) => {
+      const { email } = req.params;
+      console.log(email);
+      const result = await SupportAll.find({ userEmail: email }).toArray();
+      res.send(result);
+    });
 
     // all course show
     app.get("/courses", async (req, res) => {
@@ -187,11 +217,28 @@ async function run() {
       return res.status(201).json({ insertedId: result.insertedId });
     });
 
+    // GET Onlyusers - return users, optionally filtered by role
+    // Example: GET /Onlyusers?role=instructor
+    app.get("/Onlyusers", async (req, res) => {
+      try {
+        console.log("tokennn", req.cookies.token);
+        const role = req.query.role;
+        const filter = {};
+        if (role) filter.role = role;
+        const users = await UsersAll.find(filter).toArray();
+        return res.json(users);
+      } catch (err) {
+        console.error("GET /Onlyusers error:", err.message || err);
+        return res.status(500).json({ message: "Unable to fetch users" });
+      }
+    });
+
     // only user
     app.get("/Onlyusers", async (req, res) => {
-      const result = await UsersAll.find({role : "user"}).toArray();
+      const { params } = req.body;
+      console.log(params);
+      const result = await UsersAll.find({ role: "user" }).toArray();
       res.send(result);
-
     });
 
     app.get("/users/:email", async (req, res) => {
@@ -201,21 +248,21 @@ async function run() {
         return res.status(404).json({ message: "User not found" });
       }
       res.send(result);
-    })
+    });
 
     // role change
-    app.patch("/roleChange/:id", async(req,res)=>{
+    app.patch("/roleChange/:id", async (req, res) => {
       const { id } = req.params;
       console.log(id);
       const updateRole = req.body;
       console.log(updateRole.role);
 
       const result = await UsersAll.updateOne(
-        {_id: new ObjectId(id)},
-        {$set : {role : updateRole.role}}
-      )
-      res.send({result, message: "✅ Role updated successfully" });
-    })
+        { _id: new ObjectId(id) },
+        { $set: { role: updateRole.role } }
+      );
+      res.send({ result, message: "✅ Role updated successfully" });
+    });
     // update user from details order id add
     app.patch("/updateUser/:email", async (req, res) => {
       const { email } = req.params;
