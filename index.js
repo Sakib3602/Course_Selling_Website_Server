@@ -192,9 +192,15 @@ async function run() {
       console.log(result);
       res.send(result);
     });
-
+    // manage courses
     app.get("/manage-courses", async(req,res)=>{
       const result = await CoursesAll.find().toArray();
+      res.send(result);
+    })
+    app.delete("/manage-courses/:id", async(req,res)=>{
+      const {id} = req.params;
+      console.log(id);
+      const result = await CoursesAll.deleteOne({_id: new ObjectId(id)});
       res.send(result);
     })
 
