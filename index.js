@@ -203,6 +203,17 @@ async function run() {
       const result = await CoursesAll.deleteOne({_id: new ObjectId(id)});
       res.send(result);
     })
+    app.patch("/manage-courses/:id", async(req,res)=>{
+      const {id} = req.params;
+      console.log(id);
+      const updateData = req.body;
+      console.log(updateData);
+      const result = await CoursesAll.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData }
+      );
+      res.send({ result, message: "✅ Course updated successfully" });  
+    })
 
     // support section user
     app.post("/support", async (req, res) => {
