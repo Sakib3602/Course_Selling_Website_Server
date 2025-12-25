@@ -6,9 +6,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const moment = require('moment');
 app.use(
   cors({
-    origin: ["http://localhost:5173" , "https://check102.netlify.app"],
+    origin: ["http://localhost:5173", "https://check102.netlify.app"],
     credentials: true,
   })
 );
@@ -29,29 +30,24 @@ const client = new MongoClient(uri, {
   },
 });
 
-
-
 //
-const varifyToken = (req,res,next)=>{
-  console.log("varify token called -----------------------------")
-  const tkn = req.cookies?.token;
-  if(!tkn){
-    return res.status(401).json({message:"Unauthorized access"});
-  }
-  jwt.verify(tkn , process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
-    if(err){
-      return res.status(403).json({message:"Forbidden access"});
-    }
+// const varifyToken = (req,res,next)=>{
+//   console.log("varify token called -----------------------------")
+//   const tkn = req.cookies?.token;
+//   if(!tkn){
+//     return res.status(401).json({message:"Unauthorized access"});
+//   }
+//   jwt.verify(tkn , process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
+//     if(err){
+//       return res.status(403).json({message:"Forbidden access"});
+//     }
 
-    req.user = decoded;
-    console.log(req.user.data.email)
-    next();
+//     req.user = decoded;
+//     console.log(req.user.data.email)
+//     next();
 
-  })
-} 
-
-
-
+//   })
+// }
 
 // /
 
@@ -186,25 +182,25 @@ async function run() {
     // order enrolled user course
     app.get("/enrolled/:email", async (req, res) => {
       const { email } = req.params;
-      
+
       console.log(email, "pppp");
       const result = await OrdersAll.find({ personEmail: email }).toArray();
       console.log(result);
       res.send(result);
     });
     // manage courses
-    app.get("/manage-courses", async(req,res)=>{
+    app.get("/manage-courses", async (req, res) => {
       const result = await CoursesAll.find().toArray();
       res.send(result);
-    })
-    app.delete("/manage-courses/:id", async(req,res)=>{
-      const {id} = req.params;
+    });
+    app.delete("/manage-courses/:id", async (req, res) => {
+      const { id } = req.params;
       console.log(id);
-      const result = await CoursesAll.deleteOne({_id: new ObjectId(id)});
+      const result = await CoursesAll.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
-    })
-    app.patch("/manage-courses/:id", async(req,res)=>{
-      const {id} = req.params;
+    });
+    app.patch("/manage-courses/:id", async (req, res) => {
+      const { id } = req.params;
       console.log(id);
       const updateData = req.body;
       console.log(updateData);
@@ -212,8 +208,8 @@ async function run() {
         { _id: new ObjectId(id) },
         { $set: updateData }
       );
-      res.send({ result, message: "✅ Course updated successfully" });  
-    })
+      res.send({ result, message: "✅ Course updated successfully" });
+    });
 
     // support section user
     app.post("/support", async (req, res) => {
@@ -223,11 +219,12 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/supportAll",varifyToken, async (req, res) => {
-      console.log("support all called -----------------------------", req.query.email)
-      if(req.query.email !== req.user.data.email){
-        res.status(403).send({message:"forbidden access"})
-      }
+    app.get("/supportAll", async (req, res) => {
+      console.log(
+        "support all called -----------------------------",
+        req.query.email
+      );
+
       const result = await SupportAll.find({ status: "Pending" }).toArray();
       res.send(result);
     });
@@ -238,6 +235,24 @@ async function run() {
       const result = await SupportAll.find({ userEmail: email }).toArray();
       res.send(result);
     });
+    app.patch("/support-reply/:id", async (req, res) => {
+      const { id } = req.params;
+      const { replyText } = req.body; 
+      console.log("Replying to support ID:", id, "with text:", replyText, "date:",  moment().format("LLLL"));
+
+      const filter = { _id: new ObjectId(id) };
+
+      const updateDoc = {
+        $set: {
+          reply: replyText, // Inserts the reply text
+          status: "Resolved", // Updates existing status to 'Resolved'
+          replyDate:  moment().format("LLLL"), // Inserts the current date
+        },
+      };
+
+      const result = await SupportAll.updateOne(filter, updateDoc);
+      res.send({ result, message: "✅ Support updated successfully" });
+    });
 
     // all course show
     app.get("/courses", async (req, res) => {
@@ -245,11 +260,11 @@ async function run() {
       res.send(result);
     });
     // add courses
-    app.post("/addCourse", async(req,res)=>{
+    app.post("/addCourse", async (req, res) => {
       const body = req.body;
       const result = await CoursesAll.insertOne(body);
       res.send(result);
-    })
+    });
     // single data
     app.get("/single/:id", async (req, res) => {
       const { id } = req.params;
