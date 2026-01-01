@@ -179,6 +179,26 @@ async function run() {
         })
         .send({ success: true });
     });
+    // user work
+    app.patch("/updateUser/:email", async (req, res) => {
+      const { email } = req.params;
+      console.log(email);
+      const updateData = req.body;
+      console.log(updateData);
+
+      const UpdateU = await UsersAll.updateOne(
+        { email: email },
+        { $set: updateData }
+      );
+      res.send({...UpdateU, message: "✅ User updated successfully" });
+    })
+
+    app.get("/userP/:email", async (req, res) => {
+      const { email } = req.params;
+      console.log(email);
+      const result = await UsersAll.findOne({ email: email });
+      res.send(result);
+    })
     // order enrolled user course
     app.get("/enrolled/:email", async (req, res) => {
       const { email } = req.params;
