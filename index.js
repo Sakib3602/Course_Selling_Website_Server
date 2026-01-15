@@ -209,10 +209,40 @@ async function run() {
       const { email } = req.params;
 
       console.log(email, "pppp");
-      const result = await OrdersAll.find({ email: email }).toArray();
-      const re = result.flatMap(order => order.courses)
-      console.log(re,"ooo");
-      res.send(re);
+      const orders = await OrdersAll.find({ email: email }).toArray();
+      const courses = orders.flatMap((order) => {
+        const courseList = Array.isArray(order.courses) ? order.courses : [];
+
+        // Inject parent order metadata into each course entry
+        return courseList.map((course) => ({
+          ...course,
+          orderId: order._id?.toString(),
+          status: order.paymentStatus,
+          downloadLink: order.link,
+        }));
+      });
+
+      console.log(courses, "ooo");
+      res.send(courses);
+    });
+    // admin pendings
+    app.get("/pendings", async (req, res) => {
+     
+      const orders = await OrdersAll.find().toArray();
+      const courses = orders.flatMap((order) => {
+        const courseList = Array.isArray(order.courses) ? order.courses : [];
+
+  
+        return courseList.map((course) => ({
+          ...course,
+          orderId: order._id?.toString(),
+          status: course.status,
+          downloadLink: order.link,
+        }));
+      });
+
+      console.log(courses, "ooo");
+      res.send(courses);
     });
     // manage courses
     app.get("/manage-courses", async (req, res) => {
