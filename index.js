@@ -210,6 +210,7 @@ async function run() {
 
       console.log(email, "pppp");
       const orders = await OrdersAll.find({ email: email }).toArray();
+      console.log(orders, "orderss");
       const courses = orders.flatMap((order) => {
         const courseList = Array.isArray(order.courses) ? order.courses : [];
 
@@ -217,8 +218,8 @@ async function run() {
         return courseList.map((course) => ({
           ...course,
           orderId: order._id?.toString(),
-          status: order.paymentStatus,
-          downloadLink: order.link,
+          status: course.status,
+          downloadLink: course.downloadLink,
         }));
       });
 
@@ -242,8 +243,36 @@ async function run() {
       });
 
       console.log(courses, "ooo");
-      res.send(courses);
+      const filterC = courses.filter(c => c.status === 'pending');
+      console.log(filterC, "filtered");
+      res.send(filterC);
     });
+    app.patch("/admin/update-course-link", async (req, res) => {
+  try {
+    const { orderId, courseId, link } = req.body;
+    console.log(link)
+
+    const filter = { 
+      _id: new ObjectId(orderId), 
+      "courses.id": courseId 
+    };
+
+    //  Update only the matched course ($)
+    const updateDoc = {
+      $set: {
+        "courses.$.downloadLink": link,  
+        "courses.$.status": "completed"  
+      }
+    };
+
+    const result = await OrdersAll.updateOne(filter, updateDoc);
+    res.send(result);
+
+  } catch (error) {
+    console.error("Error updating link:", error);
+    res.status(500).send({ message: "Failed to update link" });
+  }
+});
     // manage courses
     app.get("/manage-courses", async (req, res) => {
       const result = await CoursesAll.find().toArray();updateUser
