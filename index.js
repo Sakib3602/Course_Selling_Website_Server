@@ -179,6 +179,11 @@ async function run() {
         })
         .send({ success: true });
     });
+    // all order
+    app.get("/allStudents", async(req,res)=>{
+      const result = await OrdersAll.find().toArray();
+      res.send(result);
+    })
     // user work
     app.patch("/updateUser/:email", async (req, res) => {
       const { email } = req.params;
@@ -204,13 +209,14 @@ async function run() {
       const { email } = req.params;
 
       console.log(email, "pppp");
-      const result = await OrdersAll.find({ personEmail: email }).toArray();
-      console.log(result);
-      res.send(result);
+      const result = await OrdersAll.find({ email: email }).toArray();
+      const re = result.flatMap(order => order.courses)
+      console.log(re,"ooo");
+      res.send(re);
     });
     // manage courses
     app.get("/manage-courses", async (req, res) => {
-      const result = await CoursesAll.find().toArray();
+      const result = await CoursesAll.find().toArray();updateUser
       res.send(result);
     });
     app.delete("/manage-courses/:id", async (req, res) => {
@@ -373,8 +379,8 @@ async function run() {
     });
 
     // order start
-    app.post("/orders", async (req, res) => {
-      const data = req.body || {};
+    app.post("/finalorders", async (req, res) => {
+      const data = req.body;
       const result = await OrdersAll.insertOne(data);
 
       return res
