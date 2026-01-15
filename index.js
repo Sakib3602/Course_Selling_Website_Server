@@ -275,7 +275,7 @@ async function run() {
 });
     // manage courses
     app.get("/manage-courses", async (req, res) => {
-      const result = await CoursesAll.find().toArray();updateUser
+      const result = await CoursesAll.find().toArray();
       res.send(result);
     });
     app.delete("/manage-courses/:id", async (req, res) => {
