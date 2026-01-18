@@ -6,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const moment = require('moment');
+const moment = require("moment");
 app.use(
   cors({
     origin: ["http://localhost:5173", "https://check102.netlify.app"],
@@ -59,6 +59,9 @@ async function run() {
     const UsersAll = client.db("COURSE").collection("users");
     const OrdersAll = client.db("COURSE").collection("orders");
     const SupportAll = client.db("COURSE").collection("support");
+    const MeetingAll = client.db("COURSE").collection("meeting");
+    const TaskAll = client.db("COURSE").collection("tasks");
+    const ReplyTasksAll = client.db("COURSE").collection("ReplyTasks");
     // ================= SEBL Credentials =================
 
     const SEBL_MERCHANT_ID = process.env.SEBL_MERCHANT_ID || "demoSEBL001";
@@ -179,31 +182,119 @@ async function run() {
         })
         .send({ success: true });
     });
-    // all order
-    app.get("/allStudents", async(req,res)=>{
-      const result = await OrdersAll.find().toArray();
+
+    // task
+    app.get("/tasks", async(req,res)=>{
+      const result = await TaskAll.find().toArray();
+      res.send(result)
+    })
+
+    app.post("/replyTask", async(req,res)=>{
+      const body = req.body;
+      const result = await ReplyTasksAll.insertOne(body);
       res.send(result);
     })
+    app.put("/replyTask/:id", async(req,res)=>{
+      const body = req.body;
+      console.log(body,"bodyyy");
+      const { id } = req.params;
+      console.log(id,"iddd");
+      const result = await TaskAll.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: body }
+      );
+      res.send({ result, message: "✅ Task reply updated successfully" });
+    })
+
+    // instractor workl
+    app.get("/insCourse", async(req,res)=>{
+      const result = await CoursesAll.find(
+            {}, 
+            { projection: { title: 1, _id: 1 } } 
+        ).toArray();
+      console.log(result)
+      res.send(result)
+    })
+
+    app.post("/tasks", async (req, res) => {
+      const body = req.body;
+      const result = await TaskAll.insertOne(body);
+      res.send(result);
+    })
+
+    // meeting work
+    app.post("/setMeeting", async (req, res) => {
+      const body = req.body;
+      const result = await MeetingAll.insertOne(body);
+      res.send(result);
+    });
+    app.delete("/setMeeting/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await MeetingAll.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+    app.put("/setMeetings/:id", async (req, res) => {
+      const { id } = req.params;
+      const updateData = req.body;
+      console.log(updateData, id);
+      const result = await MeetingAll.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData }
+      );
+      res.send({ result, message: "✅ Meeting updated successfully" });
+    });
+    app.get("/setMeetings", async (req, res) => {
+      const result = await MeetingAll.find().toArray();
+      res.send(result);
+    });
+    app.get("/setMeeting/:email", async (req, res) => {
+      const result = await MeetingAll.find({
+        email: req.params.email,
+      }).toArray();
+      res.send(result);
+    });
+
+    // premium work
+    app.get("/premium/:email", async (req, res) => {
+      const { email } = req.params;
+      console.log(email);
+      const result = await UsersAll.findOne({ email: email });
+      console.log(result, "[][][][]");
+      res.send(result);
+    });
+
+    app.patch("/premium/:email", async (req, res) => {
+      const { email } = req.params;
+      const resp = await UsersAll.updateOne(
+        { email: email },
+        { $set: { Premium: true } }
+      );
+      res.send({ resp, message: "✅ User upgraded to premium successfully" });
+    });
+    // all order
+    app.get("/allStudents", async (req, res) => {
+      const result = await OrdersAll.find().toArray();
+      res.send(result);
+    });
     // user work
     app.patch("/updateUser/:email", async (req, res) => {
       const { email } = req.params;
       console.log(email);
       const updateData = req.body;
-      console.log(updateData);
 
       const UpdateU = await UsersAll.updateOne(
         { email: email },
         { $set: updateData }
       );
-      res.send({...UpdateU, message: "✅ User updated successfully" });
-    })
+      res.send({ ...UpdateU, message: "✅ User updated successfully" });
+    });
 
     app.get("/userP/:email", async (req, res) => {
       const { email } = req.params;
       console.log(email);
       const result = await UsersAll.findOne({ email: email });
       res.send(result);
-    })
+    });
     // order enrolled user course
     app.get("/enrolled/:email", async (req, res) => {
       const { email } = req.params;
@@ -228,12 +319,10 @@ async function run() {
     });
     // admin pendings
     app.get("/pendings", async (req, res) => {
-     
       const orders = await OrdersAll.find().toArray();
       const courses = orders.flatMap((order) => {
         const courseList = Array.isArray(order.courses) ? order.courses : [];
 
-  
         return courseList.map((course) => ({
           ...course,
           orderId: order._id?.toString(),
@@ -243,36 +332,35 @@ async function run() {
       });
 
       console.log(courses, "ooo");
-      const filterC = courses.filter(c => c.status === 'pending');
+      const filterC = courses.filter((c) => c.status === "pending");
       console.log(filterC, "filtered");
       res.send(filterC);
     });
     app.patch("/admin/update-course-link", async (req, res) => {
-  try {
-    const { orderId, courseId, link } = req.body;
-    console.log(link)
+      try {
+        const { orderId, courseId, link } = req.body;
+        console.log(link);
 
-    const filter = { 
-      _id: new ObjectId(orderId), 
-      "courses.id": courseId 
-    };
+        const filter = {
+          _id: new ObjectId(orderId),
+          "courses.id": courseId,
+        };
 
-    //  Update only the matched course ($)
-    const updateDoc = {
-      $set: {
-        "courses.$.downloadLink": link,  
-        "courses.$.status": "completed"  
+        //  Update only the matched course ($)
+        const updateDoc = {
+          $set: {
+            "courses.$.downloadLink": link,
+            "courses.$.status": "completed",
+          },
+        };
+
+        const result = await OrdersAll.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error("Error updating link:", error);
+        res.status(500).send({ message: "Failed to update link" });
       }
-    };
-
-    const result = await OrdersAll.updateOne(filter, updateDoc);
-    res.send(result);
-
-  } catch (error) {
-    console.error("Error updating link:", error);
-    res.status(500).send({ message: "Failed to update link" });
-  }
-});
+    });
     // manage courses
     app.get("/manage-courses", async (req, res) => {
       const result = await CoursesAll.find().toArray();
@@ -322,8 +410,15 @@ async function run() {
     });
     app.patch("/support-reply/:id", async (req, res) => {
       const { id } = req.params;
-      const { replyText } = req.body; 
-      console.log("Replying to support ID:", id, "with text:", replyText, "date:",  moment().format("LLLL"));
+      const { replyText } = req.body;
+      console.log(
+        "Replying to support ID:",
+        id,
+        "with text:",
+        replyText,
+        "date:",
+        moment().format("LLLL")
+      );
 
       const filter = { _id: new ObjectId(id) };
 
@@ -331,7 +426,7 @@ async function run() {
         $set: {
           reply: replyText, // Inserts the reply text
           status: "Resolved", // Updates existing status to 'Resolved'
-          replyDate:  moment().format("LLLL"), // Inserts the current date
+          replyDate: moment().format("LLLL"), // Inserts the current date
         },
       };
 
