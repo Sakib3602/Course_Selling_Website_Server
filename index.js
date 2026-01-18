@@ -183,6 +183,23 @@ async function run() {
         .send({ success: true });
     });
 
+    // reply task
+    app.get("/replyAllTask", async(req,res)=>{
+      const result = await ReplyTasksAll.find().toArray();
+      res.send(result)
+    });
+    app.put("/submark/:id", async(req,res)=>{
+      const body = req.body;
+      console.log(body,"bodyyy");
+      const { id } = req.params;
+      console.log(id,"iddd");
+      const result = await ReplyTasksAll.updateOne(
+        { taskId: id },
+        { $set: body }
+      );
+      res.send({ result, message: "✅ Task reply updated successfully" });
+    })
+
     // task
     app.get("/tasks", async(req,res)=>{
       const result = await TaskAll.find().toArray();
