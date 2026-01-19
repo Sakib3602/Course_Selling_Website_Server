@@ -62,6 +62,7 @@ async function run() {
     const MeetingAll = client.db("COURSE").collection("meeting");
     const TaskAll = client.db("COURSE").collection("tasks");
     const ReplyTasksAll = client.db("COURSE").collection("ReplyTasks");
+    const AnnouncementsAll = client.db("COURSE").collection("announcements");
     // ================= SEBL Credentials =================
 
     const SEBL_MERCHANT_ID = process.env.SEBL_MERCHANT_ID || "demoSEBL001";
@@ -72,89 +73,89 @@ async function run() {
       process.env.PUBLIC_BASE_URL || `http://localhost:${port}`;
 
     // ================= Initiate Payment Route =================
-    app.post("/api/initiate-payment", async (req, res) => {
-      const { amount, currency = "BDT" } = req.body;
+    // app.post("/api/initiate-payment", async (req, res) => {
+    //   const { amount, currency = "BDT" } = req.body;
 
-      if (!amount) {
-        return res.status(400).json({ message: "amount is required" });
-      }
+    //   if (!amount) {
+    //     return res.status(400).json({ message: "amount is required" });
+    //   }
 
-      // ========== Data ==========
+    //   // ========== Data ==========
 
-      const data = {
-        store_id: SEBL_MERCHANT_ID, // Bank merchant ID
-        store_passwd: SEBL_MERCHANT_PASS, // Bank merchant password
-        total_amount: amount,
-        currency,
-        tran_id: "TXN" + Date.now(), // unique transaction ID
-        success_url: `${PUBLIC_BASE_URL}/api/payment/success`,
-        fail_url: `${PUBLIC_BASE_URL}/api/payment/fail`,
-        cancel_url: `${PUBLIC_BASE_URL}/api/payment/cancel`,
-        cus_name: "Sakib Sarkar Emon",
-        cus_email: "sakib@example.com",
-        cus_add1: "Dhaka",
-        cus_phone: "017xxxxxxxx",
-      };
+    //   const data = {
+    //     store_id: SEBL_MERCHANT_ID, // Bank merchant ID
+    //     store_passwd: SEBL_MERCHANT_PASS, // Bank merchant password
+    //     total_amount: amount,
+    //     currency,
+    //     tran_id: "TXN" + Date.now(), // unique transaction ID
+    //     success_url: `${PUBLIC_BASE_URL}/api/payment/success`,
+    //     fail_url: `${PUBLIC_BASE_URL}/api/payment/fail`,
+    //     cancel_url: `${PUBLIC_BASE_URL}/api/payment/cancel`,
+    //     cus_name: "Sakib Sarkar Emon",
+    //     cus_email: "sakib@example.com",
+    //     cus_add1: "Dhaka",
+    //     cus_phone: "017xxxxxxxx",
+    //   };
 
-      try {
-        // ==========  SEBL API calll ==========
-        const SEBL_API_URL =
-          process.env.SEBL_API_URL ||
-          "https://sandbox.seblpg.com/api/v1/payment/initiate";
+    //   try {
+    //     // ==========  SEBL API calll ==========
+    //     const SEBL_API_URL =
+    //       process.env.SEBL_API_URL ||
+    //       "https://sandbox.seblpg.com/api/v1/payment/initiate";
 
-        const payload = new URLSearchParams(data).toString();
+    //     const payload = new URLSearchParams(data).toString();
 
-        const response = await axios.post(SEBL_API_URL, payload, {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Accept: "application/json",
-          },
-        });
+    //     const response = await axios.post(SEBL_API_URL, payload, {
+    //       headers: {
+    //         "Content-Type": "application/x-www-form-urlencoded",
+    //         Accept: "application/json",
+    //       },
+    //     });
 
-        console.log("Gateway init response:", response.data);
+    //     console.log("Gateway init response:", response.data);
 
-        // GatewayPageURL আসলে user redirect হবে bank page এ
-        const { GatewayPageURL } = response.data;
+    //     // GatewayPageURL আসলে user redirect হবে bank page এ
+    //     const { GatewayPageURL } = response.data;
 
-        if (GatewayPageURL) {
-          return res.json({ url: GatewayPageURL });
-        }
+    //     if (GatewayPageURL) {
+    //       return res.json({ url: GatewayPageURL });
+    //     }
 
-        // যদি কোন error হয়
-        return res.status(400).json({
-          message: "Failed to create payment",
-          response: response.data,
-        });
-      } catch (error) {
-        console.error(
-          "Payment Initiate Error:",
-          error?.response?.data || error.message
-        );
+    //     // যদি কোন error হয়
+    //     return res.status(400).json({
+    //       message: "Failed to create payment",
+    //       response: response.data,
+    //     });
+    //   } catch (error) {
+    //     console.error(
+    //       "Payment Initiate Error:",
+    //       error?.response?.data || error.message
+    //     );
 
-        // 🔹 Fallback: mock checkout for demo/test
-        const mockGatewayURL = `http://localhost:5173/mock-checkout?orderId=${data.tran_id}`;
-        return res.json({ url: mockGatewayURL });
-      }
-    });
+    //     // 🔹 Fallback: mock checkout for demo/test
+    //     const mockGatewayURL = `http://localhost:5173/mock-checkout?orderId=${data.tran_id}`;
+    //     return res.json({ url: mockGatewayURL });
+    //   }
+    // });
 
     // ================= Success Callback =================
-    app.post("/api/payment/success", (req, res) => {
-      console.log("✅ Payment Successful:", req.body);
-      // এখানে database update করতে পারো
-      return res.redirect("http://localhost:5173/payment-success");
-    });
+    // app.post("/api/payment/success", (req, res) => {
+    //   console.log("✅ Payment Successful:", req.body);
+    //   // এখানে database update করতে পারো
+    //   return res.redirect("http://localhost:5173/payment-success");
+    // });
 
-    // ================= Fail Callback =================
-    app.post("/api/payment/fail", (req, res) => {
-      console.log("❌ Payment Failed:", req.body);
-      return res.redirect("http://localhost:5173/payment-fail");
-    });
+    // // ================= Fail Callback =================
+    // app.post("/api/payment/fail", (req, res) => {
+    //   console.log("❌ Payment Failed:", req.body);
+    //   return res.redirect("http://localhost:5173/payment-fail");
+    // });
 
-    // ================= Cancel Callback =================
-    app.post("/api/payment/cancel", (req, res) => {
-      console.log("⚠️ Payment Canceled:", req.body);
-      return res.redirect("http://localhost:5173/payment-fail");
-    });
+    // // ================= Cancel Callback =================
+    // app.post("/api/payment/cancel", (req, res) => {
+    //   console.log("⚠️ Payment Canceled:", req.body);
+    //   return res.redirect("http://localhost:5173/payment-fail");
+    // });
     //
     //
     // SEBl WORK END
@@ -183,6 +184,18 @@ async function run() {
         .send({ success: true });
     });
 
+
+
+    // announcement work
+    app.post("/announcements", async (req, res) => {
+      const body = req.body;
+      const result = await AnnouncementsAll.insertOne(body);
+      res.send(result);
+    });
+    app.get("/announcements", async (req, res) => {
+      const result = await AnnouncementsAll.find().toArray();
+      res.send(result);
+    });
     // reply task
     app.get("/replyAllTask", async(req,res)=>{
       const result = await ReplyTasksAll.find().toArray();
@@ -213,7 +226,7 @@ async function run() {
     })
     app.put("/replyTask/:id", async(req,res)=>{
       const body = req.body;
-      console.log(body,"bodyyy");
+      
       const { id } = req.params;
       console.log(id,"iddd");
       const result = await TaskAll.updateOne(
