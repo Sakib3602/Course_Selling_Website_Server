@@ -185,6 +185,66 @@ async function run() {
     });
 
 
+    // ================= ADMIN DASHBOARD STATS =================
+    app.get("/admin/stats", async (req, res) => {
+      try {
+        
+        const [
+          totalUsers,
+          totalInstructors,
+          totalCourses,
+          totalOrders,
+          pendingSupport,
+          revenueData
+        ] = await Promise.all([
+          
+          // 1. Count all users
+          UsersAll.countDocuments(),
+          
+          // 2. Count only instructors
+          UsersAll.countDocuments({ role: "instructor" }),
+          
+          // 3. Count total courses
+          CoursesAll.countDocuments(),
+          
+          // 4. Count total orders placed
+          OrdersAll.countDocuments(),
+          
+          // 5. Count pending support tickets
+          SupportAll.countDocuments({ status: "Pending" }),
+          
+          // 6. Calculate Total Revenue (Sum of all order prices)
+          OrdersAll.aggregate([
+            {
+              $group: {
+                _id: null,
+                // We use $toDouble just in case the price is stored as a string "100"
+                // Change "$price" to whatever field name you use for money in orders
+                totalAmount: { $sum: { $toDouble: "$price" } } 
+              }
+            }
+          ]).toArray()
+        ]);
+
+        // Extract revenue from the aggregation result (handle case if no orders exist)
+        const totalRevenue = revenueData.length > 0 ? revenueData[0].totalAmount : 0;
+
+        // Send the summary object to the frontend
+        res.send({
+          totalUsers,
+          totalInstructors,
+          totalStudents: totalUsers - totalInstructors, // Estimate students
+          totalCourses,
+          totalOrders,
+          totalRevenue,
+          pendingSupport
+        });
+
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+        res.status(500).send({ message: "Failed to load dashboard stats" });
+      }
+    });
 
     // announcement work
     app.post("/announcements", async (req, res) => {
@@ -196,6 +256,11 @@ async function run() {
       const result = await AnnouncementsAll.find().toArray();
       res.send(result);
     });
+    app.delete("/announcements/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await AnnouncementsAll.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    })
     // reply task
     app.get("/replyAllTask", async(req,res)=>{
       const result = await ReplyTasksAll.find().toArray();
