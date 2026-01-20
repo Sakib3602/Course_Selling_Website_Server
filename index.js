@@ -186,6 +186,12 @@ async function run() {
 
 
     // ================= ADMIN DASHBOARD STATS =================
+    app.delete("/delSup/:id", async(req,res)=>{
+      const {id} = req.params;
+      const result = await SupportAll.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+
+    })
     app.get("/admin/stats", async (req, res) => {
       try {
         
@@ -246,6 +252,12 @@ async function run() {
       }
     });
 
+    // 
+    app.get("/usersss", async(req,res)=>{
+      console.log("usersss called -----------------------------")
+      const result = await UsersAll.find().toArray()
+      res.send(result);
+    })
     // announcement work
     app.post("/announcements", async (req, res) => {
       const body = req.body;
