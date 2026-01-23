@@ -9,7 +9,7 @@ const cookieParser = require("cookie-parser");
 const moment = require("moment");
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://check102.netlify.app"],
+    origin: ["http://localhost:5173", "https://check102.netlify.app", "https://bengalrice.net/"],
     credentials: true,
   })
 );
