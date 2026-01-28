@@ -164,25 +164,25 @@ async function run() {
     // JJJJJJJJJJWWWWWWWWWWWWWWWTTTTTTTTTTTTTTTTT
 
     // generate jwt token
-    app.post("/jwt", async (req, res) => {
-      const user = req.body;
-      console.log(user);
-      const token = jwt.sign(
-        {
-          data: user,
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "1h" }
-      );
+    // app.post("/jwt", async (req, res) => {
+    //   const user = req.body;
+    //   console.log(user);
+    //   const token = jwt.sign(
+    //     {
+    //       data: user,
+    //     },
+    //     process.env.ACCESS_TOKEN_SECRET,
+    //     { expiresIn: "1h" }
+    //   );
 
-      res
-        .cookie("token", token, {
-          httpOnly: true,
-          secure: false, // local MUST be false
-          sameSite: "lax", // local MUST NOT be "none"
-        })
-        .send({ success: true });
-    });
+    //   res
+    //     .cookie("token", token, {
+    //       httpOnly: true,
+    //       secure: false, // local MUST be false
+    //       sameSite: "lax", // local MUST NOT be "none"
+    //     })
+    //     .send({ success: true });
+    // });
 
 
     // ================= ADMIN DASHBOARD STATS =================
