@@ -542,7 +542,7 @@ async function run() {
     });
 
     // all course show
-    app.get("/courses", async (req, res) => {
+    app.get("/api/courses", async (req, res) => {
       const result = await CoursesAll.find().toArray();
       res.send(result);
     });
